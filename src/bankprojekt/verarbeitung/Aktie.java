@@ -22,11 +22,11 @@ public class Aktie{
     /**
      * Möglicher, maximaler Kurs der Aktie
      */
-    private double max=3.0;
+    private final double max=3.0;
     /**
      * Möglicher, minimaler Kurs der Aktie
      */
-    private double min=-3.0;
+    private final double min=-3.0;
 
 public Aktie(String name,long wertpapierkennnummer,double kurs){
     this.name=name;
