@@ -3,6 +3,7 @@ package bankprojekt.verarbeitung;
 
 
 
+
 /**
  * Sammlung aller Waehrungen, die wir behandeln.
  */
@@ -34,7 +35,7 @@ public enum Waehrung {
      * @return Umgerechneter Betrag
      */
     public double euroInWaehrungUmrechnen(double betrag) {
-       return (betrag * this.umrechnungskurs);
+       return betrag * this.umrechnungskurs;
     }
 
 
@@ -44,7 +45,7 @@ public enum Waehrung {
      * @return Umgerechneter Betrag
      */
     public double waehrungInEuroUmrechnen(double betrag){
-        return (betrag/this.umrechnungskurs);
+        return betrag/this.umrechnungskurs;
 
 
     }
@@ -57,7 +58,7 @@ public enum Waehrung {
      * @return umgerechneter Betrag
      */
     public double waehrungZuWaehrung(double betrag,Waehrung von, Waehrung zu){
-        return (zu.euroInWaehrungUmrechnen(von.waehrungInEuroUmrechnen(betrag)));
+        return zu.euroInWaehrungUmrechnen(von.waehrungInEuroUmrechnen(betrag));
 
     }
 }

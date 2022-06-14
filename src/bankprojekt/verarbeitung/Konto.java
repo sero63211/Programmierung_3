@@ -1,89 +1,395 @@
 package bankprojekt.verarbeitung;
 
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * stellt ein allgemeines Konto dar
- */
-public abstract class Konto implements Comparable<Konto>
-{
-	/**
-	 * Gesamtzahl der Aktien werden hier gespeichert.
+	 * stellt ein allgemeines Konto dar
 	 */
-	private HashMap<String,Integer> aktiendepot=new HashMap<>();
+	public abstract class Konto implements Comparable<Konto>
+	{
+		/**
+		 * Dispo
+		 */
+		protected Girokonto dispo;
+		/**
+		 * das gefuehrte Sparbuch
+		 */
+		public Sparbuch sparbuch;
 
-	Aktie aktie;
+		/**
+		 * die gefuehrte Waehrung
+		 */
+		private Waehrung waehrung;
+		/**
+		 * der Kontoinhaber
+		 */
+		private Kunde inhaber;
 
-	/**
-	 * Ab dem bestimmten hoechstpreis, wird die entsprechende aktie gekafut
-	 * @param a Aktie
-	 * @param anzahl Anzahl der zu kaufenden Aktien
-	 * @param hoechstpreis Limit-Preis
-	 * @return gesamtkaufpreis
-	 */
-	public Future<Double> kaufauftrag(Aktie a, int anzahl, double hoechstpreis) {
-		double gesamtkaufpreis = anzahl * hoechstpreis;
-		ExecutorService executor = Executors.newCachedThreadPool();
-		Future<Double> future = executor.submit(new Callable<Double>() {
-			@Override
-			public Double call() throws Exception {
-				if (gesamtkaufpreis > getKontostand()) {
-					throw new NichtGenugGeldAufKontoException();
+		/**
+		 * die Kontonummer
+		 */
+		private final long nummer;
+
+		/**
+		 * der aktuelle Kontostand
+		 */
+		private double kontostand;
+
+		/**
+		 * Gesamtzahl der Aktien werden hier gespeichert.
+		 */
+		private HashMap<String,Integer> aktiendepot=new HashMap<>();
+
+		public Future<Double> kaufauftrag(Aktie a, int anzahl, double hoechstpreis) {
+			double gesamtkaufpreis = anzahl * a.getKurs();
+			ExecutorService executor = Executors.newCachedThreadPool();
+			Future<Double> future = executor.submit(new Callable<Double>() {
+				@Override
+				public Double call() throws Exception {
+					if (gesamtkaufpreis > getKontostand()) {
+						throw new NichtGenugGeldAufKontoException();
+					}
+					if (a.getKurs() <= hoechstpreis) {
+						setKontostand(getKontostand() - gesamtkaufpreis);
+						aktiendepot.put(a.getName(),anzahl);
+
+					}
+
+					return gesamtkaufpreis;
 				}
-				if (a.getKurs() >= hoechstpreis) {
-					setKontostand(getKontostand() - gesamtkaufpreis);
-					aktiendepot.put(a.getName(),anzahl);
-
-				}
-
-				return gesamtkaufpreis;
+			});
+			executor.shutdown();
+			try {
+				System.out.println("Aktien wurden fuer " + future.get() + " gekauft ");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
 			}
-		});
-		executor.shutdown();
-		try {
-			System.out.println("Aktien wurden fuer " + future.get() + " gekauft ");
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
+			return future;
 		}
-		return future;
-	}
 
-	/**
-	 * Alle Papiere der jeweiligen Aktie werden verkauft und das geld werden auf das konto eingezahlt
-	 * @param wkn Aktienname(?)
-	 * @param minimalpreis Limit-preis
-	 * @return gesamtverkaufspreis
-	 */
-	public Future<Double> verkaufauftrag(String wkn, double minimalpreis){
-		double gesamtverkaufspreis=minimalpreis*aktiendepot.get(wkn);
-		ExecutorService executor = Executors.newCachedThreadPool();
-		Future<Double> future = executor.submit(new Callable<Double>() {
-			@Override
-			public Double call() throws Exception {
-				if(wkn!=aktie.getName() ) return 0.0;
+		/**
+		 * Alle Papiere der jeweiligen Aktie werden verkauft und das geld werden auf das konto eingezahlt
+		 * @param wkn Aktienname(?)
+		 * @param minimalpreis Limit-preis
+		 * @return gesamtverkaufspreis
+		 */
+		public Future<Double> verkaufauftrag(Aktie aktie,String wkn, double minimalpreis){
+			double gesamtverkaufspreis=aktie.getKurs()*aktiendepot.get(wkn);
+			ExecutorService executor = Executors.newCachedThreadPool();
+			Future<Double> future = executor.submit(new Callable<Double>() {
+				@Override
+				public Double call() throws Exception {
+					if(wkn!=aktie.getName() ) throw new GesperrtException(getKontonummer());
 
-				if(minimalpreis>= aktie.getKurs()){
-					aktiendepot.replace(wkn,0);
-					setKontostand(getKontostand()+gesamtverkaufspreis);
+					if(aktie.getKurs()>= minimalpreis){
+						aktiendepot.replace(wkn,0);
+						setKontostand(getKontostand()+gesamtverkaufspreis);
+					}
+					return gesamtverkaufspreis;
 				}
-				return gesamtverkaufspreis;
+
+			});
+
+			try {
+				System.out.println("Alle Aktien wurden verkauft fuer "+future.get()+" Euro");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+			return future;
+		}
+
+		public String getAktieName(Aktie aktie){
+
+			return aktie.getName();
+		}
+
+		/**
+		 * setzt den aktuellen Kontostand
+		 * @param kontostand neuer Kontostand
+		 */
+		protected void setKontostand(double kontostand) {
+			this.kontostand = kontostand;
+		}
+
+		/**
+		 * Wenn das Konto gesperrt ist (gesperrt = true), können keine Aktionen daran mehr vorgenommen werden,
+		 * die zum Schaden des Kontoinhabers wären (abheben, Inhaberwechsel)
+		 */
+		private boolean gesperrt;
+
+		/**
+		 * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
+		 * der anfängliche Kontostand wird auf 0 gesetzt.
+		 *
+		 * @param inhaber der Inhaber
+		 * @param kontonummer die gewünschte Kontonummer
+		 * @throws IllegalArgumentException wenn der Inhaber null
+		 */
+		public Konto(Kunde inhaber, long kontonummer) {
+			if(inhaber == null)
+				throw new IllegalArgumentException("Inhaber darf nicht null sein!");
+			this.inhaber = inhaber;
+			this.nummer = kontonummer;
+			this.kontostand = 0;
+			this.gesperrt = false;
+			this.waehrung=Waehrung.EUR;
+
+		}
+
+		/**
+		 * setzt alle Eigenschaften des Kontos auf Standardwerte
+		 */
+		public Konto() {
+			this(Kunde.MUSTERMANN, 1234567);
+		}
+
+		/**
+		 * liefert den Kontoinhaber zurück
+		 * @return   der Inhaber
+		 */
+		public final Kunde getInhaber() {
+			return this.inhaber;
+		}
+
+		/**
+		 * setzt den Kontoinhaber
+		 * @param kinh   neuer Kontoinhaber
+		 * @throws GesperrtException wenn das Konto gesperrt ist
+		 * @throws IllegalArgumentException wenn kinh null ist
+		 */
+		public final void setInhaber(Kunde kinh) throws GesperrtException{
+			if (kinh == null)
+				throw new IllegalArgumentException("Der Inhaber darf nicht null sein!");
+			if(this.gesperrt)
+				throw new GesperrtException(this.nummer);
+			this.inhaber = kinh;
+
+		}
+
+		/**
+		 * liefert den aktuellen Kontostand
+		 * @return   double
+		 */
+		public final double getKontostand() {
+			return kontostand;
+		}
+
+		/**
+		 * liefert die Kontonummer zurück
+		 * @return   long
+		 */
+		public final long getKontonummer() {
+			return nummer;
+		}
+
+		/**
+		 * liefert zurück, ob das Konto gesperrt ist oder nicht
+		 * @return true, wenn das Konto gesperrt ist
+		 */
+		public final boolean isGesperrt() {
+			return gesperrt;
+		}
+
+		/**
+		 * Erhöht den Kontostand um den eingezahlten Betrag.
+		 *
+		 * @param betrag double
+		 * @throws IllegalArgumentException wenn der betrag negativ ist
+		 */
+		public void einzahlen(double betrag) {
+			if (betrag < 0 || Double.isNaN(betrag)) {
+				throw new IllegalArgumentException("Falscher Betrag");
+			}
+			setKontostand(getKontostand() + betrag);
+		}
+
+		/**
+		 * Gibt eine Zeichenkettendarstellung der Kontodaten zurück.
+		 */
+		@Override
+		public String toString() {
+			String ausgabe;
+			ausgabe = "Kontonummer: " + this.getKontonummerFormatiert()
+					+ System.getProperty("line.separator");
+			ausgabe += "Inhaber: " + this.inhaber;
+			ausgabe += "Aktueller Kontostand: " + getKontostandFormatiert() + " ";
+			ausgabe += this.getGesperrtText() + System.getProperty("line.separator");
+			return ausgabe;
+		}
+
+
+
+		/**
+		 * Mit dieser Methode wird der geforderte Betrag vom Konto abgehoben, wenn es nicht gesperrt ist.
+		 *
+		 * @param betrag double
+		 * @throws GesperrtException wenn das Konto gesperrt ist
+		 * @throws IllegalArgumentException wenn der betrag negativ ist
+		 * @return true, wenn die Abhebung geklappt hat,
+		 * 		   false, wenn sie abgelehnt wurde
+		 */
+		public abstract boolean abheben(double betrag)
+				throws GesperrtException;
+
+		/**
+		 * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.
+		 */
+		public final void sperren() {
+			this.gesperrt = true;
+		}
+
+		/**
+		 * entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
+		 */
+		public final void entsperren() {
+			this.gesperrt = false;
+		}
+
+
+		/**
+		 * liefert eine String-Ausgabe, wenn das Konto gesperrt ist
+		 * @return "GESPERRT", wenn das Konto gesperrt ist, ansonsten ""
+		 */
+		public final String getGesperrtText()
+		{
+			if (this.gesperrt)
+			{
+				return "GESPERRT";
+			}
+			else
+			{
+				return "";
+			}
+		}
+
+		/**
+		 * liefert die ordentlich formatierte Kontonummer
+		 * @return auf 10 Stellen formatierte Kontonummer
+		 */
+		public String getKontonummerFormatiert()
+		{
+			return String.format("%10d", this.nummer);
+		}
+
+		/**
+		 * liefert den ordentlich formatierten Kontostand
+		 * @return formatierter Kontostand mit 2 Nachkommastellen und Währungssymbol €
+		 */
+		public String getKontostandFormatiert()
+		{
+			return String.format("%10.2f "+getAktuelleWaehrung(), this.getKontostand());
+		}
+
+		/**
+		 * Vergleich von this mit other; Zwei Konten gelten als gleich,
+		 * wen sie die gleiche Kontonummer haben
+		 * @param other das Vergleichskonto
+		 * @return true, wenn beide Konten die gleiche Nummer haben
+		 */
+		@Override
+		public boolean equals(Object other)
+		{
+			if(this == other)
+				return true;
+			if(other == null)
+				return false;
+			if(this.getClass() != other.getClass())
+				return false;
+			if(this.nummer == ((Konto)other).nummer)
+				return true;
+			else
+				return false;
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return 31 + (int) (this.nummer ^ (this.nummer >>> 32));
+		}
+
+		@Override
+		public int compareTo(Konto other)
+		{
+			if(other.getKontonummer() > this.getKontonummer())
+				return -1;
+			if(other.getKontonummer() < this.getKontonummer())
+				return 1;
+			return 0;
+		}
+
+		/**
+		 * Boolsche-Methode, welche ein true oder false zurück, falls die Abhebung vollzogen werden kann
+		 * @param betrag Ist der Betrag größer-gleich [<=] der jeweilige Kontostand
+		 * @param w Gewünschte Währung zum Abheben.
+		 * @return true=möglich, false=Abheben nicht möglich
+		 * @throws GesperrtException
+		 */
+		public boolean abheben(double betrag, Waehrung w) throws GesperrtException, IOException {
+			if(betrag<0) throw new IOException();
+			if(this.gesperrt)throw new GesperrtException(this.getKontonummer());
+			if(w==null){throw new IllegalArgumentException("Währung darf nicht null sein!");}
+			if(getAktuelleWaehrung()==w){ //gleiche Waehrung, wie die die vom Konto geführt wird?
+				if(betrag>getKontostand()){ //abhebender Betrag größer als der Kontostand?
+					return false; //nicht möglich
+				}
+				else{ //falls nicht größer,dann:
+
+					setKontostand(getKontostand()-betrag); //neuer Kontostand
+
+					return true;
+				}
+
+			}
+			else { // falls Fremdwährung, dann:
+				setKontostand(getKontostand() - waehrung.waehrungInEuroUmrechnen(betrag));//neuer Kontostand
+
 			}
 
-		});
-
-		try {
-			System.out.println("Alle Aktien wurden verkauft fuer "+future.get()+" Euro");
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
+			return true;
 		}
-		return future;
+
+		/**
+		 * Angegebener Betrag wird eingezahlt
+		 * @param betrag Einzuzahlender Betrag
+		 * @param w Dazugehörige Währung
+		 */
+		public void einzahlen(double betrag, Waehrung w) throws IOException {
+			if(betrag<0) throw new IOException();
+			if(this.gesperrt)getGesperrtText(); //falls das Konto gesperrt ist
+			if(w==null){throw new IllegalArgumentException("Währung darf nicht null sein!");}
+			if(getAktuelleWaehrung()==w){ //gleiche Waehrung, wie die die vom Konto geführt wird?
+				setKontostand(betrag+getKontostand());//einzuzahlender Betrag + aktueller Kontostand
+			}
+			else{
+				setKontostand(waehrung.waehrungInEuroUmrechnen(betrag)+this.kontostand);//einzuzahlender Betrag [konvertiert in Euro] + aktueller Kontostand
+			}
+		}
+		/**
+		 * gibt die aktuell geführte Währung zurück
+		 * @return Aktuelle Währung
+		 */
+		public Waehrung getAktuelleWaehrung(){return this.waehrung;}
+
+		public void setWaehrung(Waehrung waehrung) {this.waehrung = waehrung;}
+
+		/**
+		 * Währung wird gewechselt, Abhebesumme, Dispo und Kontostand müssen dementsprechend angepasst werden
+		 * @param neu neue Währung
+		 */
+
+		public void waehrungswechsel(Waehrung neu){
+			setKontostand(waehrung.waehrungZuWaehrung(getKontostand(),getAktuelleWaehrung(),neu));
+			setWaehrung(neu);
+
+
+		}
+
 	}
 
 
@@ -92,186 +398,8 @@ public abstract class Konto implements Comparable<Konto>
 
 
 
-	/**
-	 * setzt den aktuellen Kontostand
-	 * @param kontostand neuer Kontostand
-	 */
-	protected void setKontostand(double kontostand) {
-		System.out.println("nicht aufrufen!");
-	}
-
-	/**
-	 * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
-	 * der anfängliche Kontostand wird auf 0 gesetzt.
-	 *
-	 * @param inhaber Kunde
-	 * @param kontonummer long
-	 * @throws IllegalArgumentException wenn der Inhaber null
-	 */
-	public Konto(Kunde inhaber, long kontonummer) {
-	}
-	
-	/**
-	 * setzt alle Eigenschaften des Kontos auf Standardwerte
-	 */
-	public Konto() {
-	}
-
-	/**
-	 * liefert den Kontoinhaber zurück
-	 * @return   Kunde
-	 */
-	public Kunde getInhaber() {
-		System.out.println("nicht aufrufen!");
-		return null;
-	}
-	
-	/**
-	 * setzt den Kontoinhaber
-	 * @param kinh   neuer Kontoinhaber
-	 * @throws GesperrtException wenn das Konto gesperrt ist
-	 * @throws IllegalArgumentException wenn kinh null ist
-	 */
-	public void setInhaber(Kunde kinh) throws GesperrtException{
-		System.out.println("nicht aufrufen!");
-
-	}
-	
-	/**
-	 * liefert den aktuellen Kontostand
-	 * @return   double
-	 */
-	public double getKontostand() {
-		System.out.println("nicht aufrufen!");
-
-		return 0;
-	}
-
-	/**
-	 * liefert die Kontonummer zurück
-	 * @return   long
-	 */
-	public long getKontonummer() {
-		System.out.println("nicht aufrufen!");
-		return 0;
-	}
-
-	/**
-	 * liefert zurück, ob das Konto gesperrt ist oder nicht
-	 * @return
-	 */
-	public boolean isGesperrt() {
-		System.out.println("nicht aufrufen!");
-		return false;
-	}
-	
-	/**
-	 * Erhöht den Kontostand um den eingezahlten Betrag.
-	 *
-	 * @param betrag double
-	 * @throws IllegalArgumentException wenn der betrag negativ ist 
-	 */
-	public void einzahlen(double betrag) {
-		System.out.println("nicht aufrufen!");
-	}
-	
-	/**
-	 * Gibt eine Zeichenkettendarstellung der Kontodaten zurück.
-	 */
-	@Override
-	public String toString() {
-		System.out.println("nicht aufrufen!");
-		return null;
-	}
-
-	/**
-	 * Mit dieser Methode wird der geforderte Betrag vom Konto abgehoben, wenn es nicht gesperrt ist.
-	 *
-	 * @param betrag double
-	 * @throws GesperrtException wenn das Konto gesperrt ist
-	 * @throws IllegalArgumentException wenn der betrag negativ ist 
-	 * @return true, wenn die Abhebung geklappt hat, 
-	 * 		   false, wenn sie abgelehnt wurde
-	 */
-	public abstract boolean abheben(double betrag) throws GesperrtException;
-	
-	/**
-	 * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.
-	 */
-	public void sperren() {
-		System.out.println("nicht aufrufen!");
-	}
-
-	/**
-	 * entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
-	 */
-	public void entsperren() {
-		System.out.println("nicht aufrufen!");
-	}
-	
-	
-	/**
-	 * liefert eine String-Ausgabe, wenn das Konto gesperrt ist
-	 * @return "GESPERRT", wenn das Konto gesperrt ist, ansonsten ""
-	 */
-	public String getGesperrtText()
-	{
-		System.out.println("nicht aufrufen!");
-		return null;
-	}
-	
-	/**
-	 * liefert die ordentlich formatierte Kontonummer
-	 * @return auf 10 Stellen formatierte Kontonummer
-	 */
-	public String getKontonummerFormatiert()
-	{
-		System.out.println("nicht aufrufen!");
-		return null;
-	}
-	
-	/**
-	 * liefert den ordentlich formatierten Kontostand
-	 * @return formatierter Kontostand mit 2 Nachkommastellen und Währungssymbol €
-	 */
-	public String getKontostandFormatiert()
-	{
-		System.out.println("nicht aufrufen!");
-		return null;
-	}
-	
-	/**
-	 * Vergleich von this mit other; Zwei Konten gelten als gleich,
-	 * wen sie die gleiche Kontonummer haben
-	 * @param other
-	 * @return true, wenn beide Konten die gleiche Nummer haben
-	 */
-	@Override
-	public boolean equals(Object other)
-	{
-		System.out.println("nicht aufrufen!");
-		return false;
-	}
-	
-	@Override
-	public int hashCode()
-	{
-		System.out.println("nicht aufrufen!");
-		return 0;
-	}
-
-	@Override
-	public int compareTo(Konto other)
-	{
-		System.out.println("nicht aufrufen!");
-		return 0;
-	}
-	
-	// Diese Methode sollte hier eigentlich nicht sein!
-	public void aufKonsoleAusgeben()
-	{
-		System.out.println("nicht aufrufen!");
-	}
 
 
-}
+
+
+
