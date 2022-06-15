@@ -3,6 +3,7 @@ package bankprojekt.verarbeitung;
  *
  * Bibliothek. Notwendig für die Verwendung von Collections
  */
+import java.io.*;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Predicate;
@@ -11,7 +12,13 @@ import java.util.stream.Collectors;
 /**
  * Klasse Bank. Verwaltet Girokonto, Sparbuch
  */
-public class Bank   {
+public class Bank  implements Serializable, Cloneable {
+
+    /**
+     * Versionsnummer
+     */
+    private static final long serialVersionUID = 2342234872L;
+
 
     private long maxKontonummer=0;
     /**
@@ -215,6 +222,49 @@ public class Bank   {
                 .map(k->k.getInhaber())
                 .collect(Collectors.toList());
     }
+
+
+    /**
+     * Clone-Method für Bank-Objekt
+     * byte array wird deklariert.
+     *
+     * @return
+     */
+    @Override
+    public Bank clone()throws CloneNotSupportedException{
+        byte[] bank = null; //byte-Array fuer die Umwandlung
+        //1. Zu kopierendes Objekt wird in einen BAOS hineingeschrieben
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()){
+            //Objekt wird in einen OOS geschrieben
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(this);
+            //Das Objekt wird in einen byte-Array gewandelt
+            bank = baos.toByteArray();
+
+        } catch (IOException e){
+
+        }
+        //Kopie wird gelesen und zurückgeliefert
+        try(ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bank))){
+            return (Bank) ois.readObject();
+            //Kann nichts passieren
+        } catch (IOException e) {
+
+        } catch (ClassNotFoundException e) {
+
+
+
+        }
+
+        return null;
+    }
+
+
+
+
+
+
+
 
 }
 
