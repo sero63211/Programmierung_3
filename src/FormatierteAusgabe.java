@@ -7,45 +7,7 @@ import java.util.Scanner;
 public class FormatierteAusgabe {
 
     public static void main(String[] args) throws IOException {
-       /**
-        try (FileWriter fileWriter = new FileWriter("output.txt")) {
-            PrintWriter printWriter = new PrintWriter(fileWriter);
-            Scanner scanner = new Scanner(System.in);
-
-            System.out.println("Bitte geben Sie eine ganze Zahl ein: ");
-            long ganzeZahl = scanner.nextInt();
-            printWriter.printf("%d%n",ganzeZahl);
-
-          //  System.out.println("Bitte geben Sie eine  Kommazahl ein: ");
-           //  double kommaZahl= scanner.nextDouble();
-
-
-            if(String.valueOf(ganzeZahl).length()< 12){
-
-                printWriter.printf("%012d%n",ganzeZahl);
-
-
-            }
-                else{
-                printWriter.printf("%d%n",ganzeZahl);
-            }
-            printWriter.printf("%+,d%n", ganzeZahl);
-
-            //4. standard Formatierung für Fließkommazahlen
-            printWriter.printf("%f%n", kommaZahl);
-            //5. Zahl mit 2 Nachkommastellen
-            printWriter.printf("%+.2f %n", kommaZahl);
-            //6. wissenschaftliche Darstellung
-            printWriter.printf("%e %n", kommaZahl);
-
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-
-
-    }
-**/
-        try (FileWriter fileWriter = new FileWriter("output.txt")) {
+         try (FileWriter fileWriter = new FileWriter("output.txt")) {
             PrintWriter printWriter = new PrintWriter(fileWriter);
             Scanner scanner = new Scanner(System.in);
 
@@ -79,6 +41,7 @@ public class FormatierteAusgabe {
 
 
             printWriter.flush();
+            printWriter.close();
         } catch (Throwable throwable) {
             throwable.printStackTrace();
         }
