@@ -54,32 +54,29 @@ public class Sparbuch extends Konto {
     	return ausgabe;
 	}
 
+	/**
+	 * Boolsche-Methode Bedingung pruefen vor dem Abheben
+	 * @param betrag double
+	 * @return true or false
+	 * @throws GesperrtException
+	 */
 	@Override
-	public boolean abheben (double betrag) throws GesperrtException{
-		if (betrag < 0 || Double.isNaN(betrag)) {
-			throw new IllegalArgumentException("Betrag ungültig");
-		}
-		if(this.isGesperrt())
-		{
-			GesperrtException e = new GesperrtException(this.getKontonummer());
-			throw e;
-		}
+	public boolean abhebenBedingung(double betrag) throws GesperrtException {
 		LocalDate heute = LocalDate.now();
+		//prueft ob neuer Monat angefangen hat
 		if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear())
 		{
-			this.bereitsAbgehoben = 0;
+			this.bereitsAbgehoben = 0; //sollte hier nichts ändern
 		}
-		if (getKontostand() - betrag >= 0.50 && 
-				 bereitsAbgehoben + betrag <= getAktuelleWaehrung().euroInWaehrungUmrechnen(Sparbuch.ABHEBESUMME) )
-		{
-			setKontostand(getKontostand() - betrag);
-			bereitsAbgehoben += betrag;
-			this.zeitpunkt = LocalDate.now();
-			return true;
-		}
-		else
-			return false;
-	}
+		//Pruefung, ob Kontostand ausreichend
+		return getKontostand() - betrag >= 0.50 &&
+				//Passt ABHEBESUMME an der aktuellen Kontowaehrung an
+				bereitsAbgehoben + betrag <= Sparbuch.ABHEBESUMME*getAktuelleWaehrung().umrechnungskurs;
+
+}
+
+
+
 
 	/**
 	 * set-Methode für Bereitsabgehoben

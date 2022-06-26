@@ -5,7 +5,7 @@ package bankprojekt.verarbeitung;
  * @author Doro
  *
  */
-public class Girokonto extends Konto implements Ueberweisungsfaehig{
+public class Girokonto extends Konto {
 	/**
 	 * Wert, bis zu dem das Konto überzogen werden darf
 	 */
@@ -56,34 +56,7 @@ public class Girokonto extends Konto implements Ueberweisungsfaehig{
 			throw new IllegalArgumentException("Der Dispo ist nicht gültig!");
 		this.dispo = dispo;
 	}
-	
-	@Override
-    public boolean ueberweisungAbsenden(double betrag, 
-    		String empfaenger, long nachKontonr, 
-    		long nachBlz, String verwendungszweck) 
-    				throws GesperrtException 
-    {
-      if (this.isGesperrt())
-            throw new GesperrtException(this.getKontonummer());
-        if (betrag < 0 || Double.isNaN(betrag) || empfaenger == null || verwendungszweck == null)
-            throw new IllegalArgumentException("Parameter fehlerhaft");
-        if (getKontostand() - betrag >= - dispo)
-        {
-            setKontostand(getKontostand() - betrag);
-            return true;
-        }
-        else
-        	return false;
-    }
 
-    @Override
-    public void ueberweisungEmpfangen(double betrag, String vonName, long vonKontonr, long vonBlz, String verwendungszweck)
-    {
-        if (betrag < 0 || Double.isNaN(betrag) || vonName == null || verwendungszweck == null)
-            throw new IllegalArgumentException("Parameter fehlerhaft");
-        setKontostand(getKontostand() + betrag);
-    }
-    
     @Override
     public String toString()
     {
@@ -94,19 +67,12 @@ public class Girokonto extends Konto implements Ueberweisungsfaehig{
     }
 
 	@Override
-	public boolean abheben(double betrag) throws GesperrtException{
-		if (betrag < 0 || Double.isNaN(betrag)) {
-			throw new IllegalArgumentException("Betrag ungültig");
+	public boolean abhebenBedingung(double betrag) throws GesperrtException {
+			//prueft, ob Abheben möglich hinsichtlich Kontostandes bzw. Dispos
+			return getKontostand() - betrag >= - dispo;
 		}
-		if(this.isGesperrt())
-			throw new GesperrtException(this.getKontonummer());
-		if (getKontostand() - betrag >= - dispo)
-		{
-			setKontostand(getKontostand() - betrag);
-			return true;
-		}
-		else
-			return false;
-	}
+
+
+
 
 }

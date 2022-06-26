@@ -234,8 +234,7 @@ import java.util.concurrent.*;
 		 * @return true, wenn die Abhebung geklappt hat,
 		 * 		   false, wenn sie abgelehnt wurde
 		 */
-		public abstract boolean abheben(double betrag)
-				throws GesperrtException;
+		public abstract boolean abhebenBedingung(double betrag) throws GesperrtException;
 
 		/**
 		 * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.
@@ -323,36 +322,6 @@ import java.util.concurrent.*;
 			return 0;
 		}
 
-		/**
-		 * Boolsche-Methode, welche ein true oder false zurück, falls die Abhebung vollzogen werden kann
-		 * @param betrag Ist der Betrag größer-gleich [<=] der jeweilige Kontostand
-		 * @param w Gewünschte Währung zum Abheben.
-		 * @return true=möglich, false=Abheben nicht möglich
-		 * @throws GesperrtException
-		 */
-		public boolean abheben(double betrag, Waehrung w) throws GesperrtException, IOException {
-			if(betrag<0) throw new IOException();
-			if(this.gesperrt)throw new GesperrtException(this.getKontonummer());
-			if(w==null){throw new IllegalArgumentException("Währung darf nicht null sein!");}
-			if(getAktuelleWaehrung()==w){ //gleiche Waehrung, wie die die vom Konto geführt wird?
-				if(betrag>getKontostand()){ //abhebender Betrag größer als der Kontostand?
-					return false; //nicht möglich
-				}
-				else{ //falls nicht größer,dann:
-
-					setKontostand(getKontostand()-betrag); //neuer Kontostand
-
-					return true;
-				}
-
-			}
-			else { // falls Fremdwährung, dann:
-				setKontostand(getKontostand() - waehrung.waehrungInEuroUmrechnen(betrag));//neuer Kontostand
-
-			}
-
-			return true;
-		}
 
 		/**
 		 * Angegebener Betrag wird eingezahlt
@@ -389,6 +358,29 @@ import java.util.concurrent.*;
 
 
 		}
+
+		/**
+		 * Template
+		 * Methode Abheben
+		 * @param betrag
+		 * @return true oder false
+		 * @throws IllegalArgumentException
+		 * @throws GesperrtException
+		 */
+		public boolean abheben(double betrag ) throws IllegalArgumentException, GesperrtException {
+			if(betrag < 0) throw new IllegalArgumentException("Betrag darf nicht negativ sein.");
+			if(isGesperrt()) throw new GesperrtException(this.getKontonummer());
+				//prueft Vorbedingungen: Kontostand ausreichend hinsichtlich Dispos, monatl. Höchstbetrag
+			if (abhebenBedingung(betrag)) {
+				//passt den Kontostand an
+				setKontostand(getKontostand() - betrag);
+				return true; //das muss hier
+			}
+			return false;
+
+		}
+
+
 
 	}
 

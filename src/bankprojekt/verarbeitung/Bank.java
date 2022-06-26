@@ -3,6 +3,8 @@ package bankprojekt.verarbeitung;
  *
  * Bibliothek. Notwendig für die Verwendung von Collections
  */
+import bankprojekt.verwaltung.Kontofabrik;
+
 import java.io.*;
 import java.time.LocalDate;
 import java.util.*;
@@ -20,7 +22,7 @@ public class Bank  implements Serializable, Cloneable {
     private static final long serialVersionUID = 2342234872L;
 
 
-    private long maxKontonummer=0;
+    private long maxKontonummer = 0;
     /**
      * Attribut Bankleitzahl
      */
@@ -30,9 +32,11 @@ public class Bank  implements Serializable, Cloneable {
      * Key=Kontonummer(zufaellig generieerter Schlüssel)
      * Value= Objekt vom Typ Konto
      */
-    private  HashMap<Long,Konto>konten=new HashMap<>();
+    private HashMap<Long, Konto> konten = new HashMap<>();
+
     /**
      * Konstruktor. Verwaltet nur den Parameter Bankleitzahl.
+     *
      * @param bankleitzahl
      */
     public Bank(long bankleitzahl) {
@@ -43,43 +47,56 @@ public class Bank  implements Serializable, Cloneable {
 
         }
     }
+public long mockEinfuegen(Konto k){
+        long neueKontonummer=getNeueKontonummer();
+        konten.put(neueKontonummer,k);
+        return neueKontonummer;
+
+}
+public long getNeueKontonummer(){
+        return 2L;
+}
     /**
      * Gibt den long-Wert bankleitzahl wieder
+     *
      * @return long bankleitzahl
      */
-    public long getBankleitzahl(){return this.bankleitzahl;}
+    public long getBankleitzahl() {
+        return this.bankleitzahl;
+    }
 
     /**
      * Erstellt ein Girokonto mit einem zufaellig generierten Key.
+     *
      * @param inhaber
      * @return Kontonummer
      */
-    public long girokontoErstellen(Kunde inhaber)throws KontoNummerNichtVorhandenException{
-        if(inhaber != null){
+    public long girokontoErstellen(Kunde inhaber) throws KontoNummerNichtVorhandenException {
+        if (inhaber != null) {
             //vergibt eine gueltige Kontonummer
-            long ktnummer = maxKontonummer+1;
+            long ktnummer = maxKontonummer + 1;
             //erstellt neues Giro anhand der Kontonummer und des Kunden inhaber
             Konto giro = new Girokonto(inhaber, ktnummer, 1500);
             //fuegt kontonummer und giro in die Hashmap
-            konten.put(ktnummer,giro);
+            konten.put(ktnummer, giro);
             //aktualisiert die bishervergebenen Kontonummer
             maxKontonummer = ktnummer;
             return ktnummer;
-        }
-        else {
+        } else {
 
             throw new KontoNummerNichtVorhandenException("Bitte uebergeben Sie einen echten Kunden!");
 
-        }}
-
+        }
+    }
 
 
     /**
      * Erstellt ein Sparbuch mit einem zufällig generierten Key.
+     *
      * @param inhaber
      * @return Kontonummer
      */
-    public long sparbuchErstellen(Kunde inhaber)throws KontoNummerNichtVorhandenException{
+    public long sparbuchErstellen(Kunde inhaber) throws KontoNummerNichtVorhandenException {
         if (inhaber != null) {
             // vergibt eine gueltige Kontonummer
             long ktnummer = maxKontonummer + 1;
@@ -87,7 +104,7 @@ public class Bank  implements Serializable, Cloneable {
             konten.put(ktnummer, sparbuch);
             maxKontonummer = ktnummer;
             return ktnummer;
-        } else{
+        } else {
             throw new KontoNummerNichtVorhandenException("Bitte uebergeben Sie einen echten Kunden!");
         }
 
@@ -95,20 +112,21 @@ public class Bank  implements Serializable, Cloneable {
 
     /**
      * Auflistung der Kontonummern und des Kontostands aller Konten.
-     * @return  Kontonummer,Kontostand
+     *
+     * @return Kontonummer, Kontostand
      */
-    public String getAlleKonten(){
+    public String getAlleKonten() {
 
-        String result="";
+        String result = "";
 
-        for(Map.Entry<Long, Konto> entry: konten.entrySet()){
-            result+="Kontonummer: " + entry.getKey() + " Kontostand: " + entry.getValue().getKontostand()
+        for (Map.Entry<Long, Konto> entry : konten.entrySet()) {
+            result += "Kontonummer: " + entry.getKey() + " Kontostand: " + entry.getValue().getKontostand()
                     + System.getProperty("line.separator");
         }
         return result;
     }
 
-    public List<Long> getAlleKontonummern(){
+    public List<Long> getAlleKontonummern() {
 
         return konten.keySet().stream().collect(Collectors.toList());
 
@@ -118,23 +136,24 @@ public class Bank  implements Serializable, Cloneable {
         konten.get(von).abheben(betrag);
         return false;
     }
-    public void geldEinzahlen(long auf, double betrag){
+
+    public void geldEinzahlen(long auf, double betrag) {
         konten.get(auf).einzahlen(betrag);
     }
 
-    public boolean kontoLoeschen(long nummer) throws KontoNummerNichtVorhandenException{
+    public boolean kontoLoeschen(long nummer) throws KontoNummerNichtVorhandenException {
         Konto k = konten.remove(nummer);
-        if(k!= null) return true;
+        if (k != null) return true;
         else {
             throw new KontoNummerNichtVorhandenException("Bitte uebergeben Sie einen echten Kunden!");
 
         }
     }
 
-    public double getKontostand(long nummer)throws KontoNummerNichtVorhandenException{
-        if(konten.containsKey(nummer))
+    public double getKontostand(long nummer) throws KontoNummerNichtVorhandenException {
+        if (konten.containsKey(nummer))
             return konten.get(nummer).getKontostand();
-        else{
+        else {
             throw new KontoNummerNichtVorhandenException("Bitte uebergeben Sie einen echten Kunden!");
 
         }
@@ -142,25 +161,24 @@ public class Bank  implements Serializable, Cloneable {
     }
 
 
-
     public boolean geldUeberweisen(long vonKontonr, long nachKontonr, double betrag, String verwendungszweck) throws GesperrtException, KontoNummerNichtVorhandenException, NurBankinterneÜberweisungenException {
-        String benoetigterVerwendungszweck="Bankinterne Überweisung";
-        if(!verwendungszweck.equals(benoetigterVerwendungszweck)){
+        String benoetigterVerwendungszweck = "Bankinterne Überweisung";
+        if (!verwendungszweck.equals(benoetigterVerwendungszweck)) {
             throw new NurBankinterneÜberweisungenException("Nur bankinterne Überweisungen!");
         }
-        if(konten.get(vonKontonr).isGesperrt()){
+        if (konten.get(vonKontonr).isGesperrt()) {
             throw new GesperrtException(vonKontonr);
         }
-        if(konten.get(nachKontonr).isGesperrt()){
+        if (konten.get(nachKontonr).isGesperrt()) {
             throw new GesperrtException(nachKontonr);
         }
-        if(!konten.containsKey(vonKontonr)){
-        throw new KontoNummerNichtVorhandenException("Kontonummer nicht vorhanden");
-        }
-        if(!konten.containsKey(nachKontonr)){
+        if (!konten.containsKey(vonKontonr)) {
             throw new KontoNummerNichtVorhandenException("Kontonummer nicht vorhanden");
         }
-        if(konten.get(vonKontonr).getKontostand()<betrag){
+        if (!konten.containsKey(nachKontonr)) {
+            throw new KontoNummerNichtVorhandenException("Kontonummer nicht vorhanden");
+        }
+        if (konten.get(vonKontonr).getKontostand() < betrag) {
             throw new NurBankinterneÜberweisungenException("Nicht genug Geld auf dem Konto!");
         }
 
@@ -169,9 +187,9 @@ public class Bank  implements Serializable, Cloneable {
          * es nicht möglich die map.replace methode zu verwenden, da kein double Wert verwendet werden kann.
          */
 
-        double differenz=konten.get(vonKontonr).getKontostand();
+        double differenz = konten.get(vonKontonr).getKontostand();
         konten.get(vonKontonr).setKontostand(differenz);
-        konten.get(nachKontonr).setKontostand(getKontostand(nachKontonr)+betrag);
+        konten.get(nachKontonr).setKontostand(getKontostand(nachKontonr) + betrag);
         return true;
     }
 
@@ -181,77 +199,78 @@ public class Bank  implements Serializable, Cloneable {
      */
 
 
-    public void pleitegeierSperren(){
+    public void pleitegeierSperren() {
         konten.values()
                 .stream()
-                .filter((k->k.getKontostand()<0))
-                .forEach(k->k.sperren());
-        }
+                .filter((k -> k.getKontostand() < 0))
+                .forEach(k -> k.sperren());
+    }
 
-    public String getKundengeburtstage(){
+    public String getKundengeburtstage() {
         return konten.values()
                 .stream()
-                .map(k->k.getInhaber())
+                .map(k -> k.getInhaber())
                 .distinct()
                 .sorted(Comparator.comparing(Kunde::getGeburtstag))
                 .collect(Collectors.toList())
                 .toString();
     }
-    public List<Long> getKontonummernLuecken(){
+
+    public List<Long> getKontonummernLuecken() {
         return konten.values()
                 .stream()
-                .collect(Collectors.partitioningBy(k->k.getKontonummer()<maxKontonummer))
+                .collect(Collectors.partitioningBy(k -> k.getKontonummer() < maxKontonummer))
                 .get(true)
                 .stream()
-                .map(k->k.getKontonummer())
+                .map(k -> k.getKontonummer())
                 .collect(Collectors.toList());
 
     }
+
     /**
      * Liefert Liste mit allen Kunden, die einen Kontostand haben,
      * der mindestens "minumum" beträgt.
+     *
      * @param minimum
      * @return
      */
-    public List<Kunde> getKundenMitVollemKonto(double minimum){
+    public List<Kunde> getKundenMitVollemKonto(double minimum) {
         return konten.values()
                 .stream()
-                .collect(Collectors.partitioningBy(k->k.getKontostand()>= minimum))
+                .collect(Collectors.partitioningBy(k -> k.getKontostand() >= minimum))
                 .get(true)
                 .stream()
-                .map(k->k.getInhaber())
+                .map(k -> k.getInhaber())
                 .collect(Collectors.toList());
     }
 
 
     /**
-     * Clone-Method für Bank-Objekt
-     * byte array wird deklariert.
+     *Override Clone-Methode
+     * Serialisierung:
+     * Kopierendes Objekt  wird in einen BAOS geschrieben.
+     * Objekt wird in einen OOS geschrieben
+     * Das Objekt wird in einen byte-Array umgewandelt
      *
+     * Deserialisierung:
+     * Kopie wird gelesen und zurückgeliefert
      * @return
      */
     @Override
-    public Bank clone()throws CloneNotSupportedException{
-        byte[] bank = null; //byte-Array fuer die Umwandlung
-        //1. Zu kopierendes Objekt wird in einen BAOS hineingeschrieben
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()){
-            //Objekt wird in einen OOS geschrieben
+    public Bank clone() throws CloneNotSupportedException {
+        byte[] bank = null;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             ObjectOutputStream oos = new ObjectOutputStream(baos);
             oos.writeObject(this);
-            //Das Objekt wird in einen byte-Array gewandelt
             bank = baos.toByteArray();
 
-        } catch (IOException e){
-
+        } catch (IOException e) {
         }
-        //Kopie wird gelesen und zurückgeliefert
-        try(ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bank))){
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bank))) {
             return (Bank) ois.readObject();
-            //Kann nichts passieren
         } catch (IOException e) {
 
         } catch (ClassNotFoundException e) {
-
 
 
         }
@@ -259,14 +278,27 @@ public class Bank  implements Serializable, Cloneable {
         return null;
     }
 
-
-
-
-
-
-
-
+    /**
+     * Konto-Erstellung, Parameter(Kontofabrik fabrik) bestimmen, welches Konto erstellt wird.
+     * @param fabrik
+     * @param inhaber
+     * @return kontonummer
+     */
+    public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber){
+        //Ueberprüfung erfolgt auch in den Konten-Klassen
+        if(inhaber != null){
+            long kontonummer = maxKontonummer+1;
+            konten.put(kontonummer, fabrik.kontoErstellen(inhaber, kontonummer));
+            maxKontonummer = kontonummer;
+            return kontonummer;
+        }
+        else {
+            NullPointerException e = new NullPointerException("Informationen über Inhaber sind leer.");
+            throw e;
+        }
+    }
 }
+
 
 
 

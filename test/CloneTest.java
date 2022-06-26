@@ -11,6 +11,12 @@ public class CloneTest {
 
     private Bank original = new Bank(12341111);
 
+    /**
+     * Exception wird geliefert, weil buf(?) null ist. Ich weiß leider nicht wie genau das gelöst werden
+     * kann.
+     * @throws KontoNummerNichtVorhandenException
+     * @throws CloneNotSupportedException
+     */
 
     @Test
     public void CloneTest() throws KontoNummerNichtVorhandenException, CloneNotSupportedException {
@@ -22,12 +28,11 @@ public class CloneTest {
         /**
          * Konto wird kopiert.
          */
-        Bank bankClone =(Bank) original.clone();
+          Bank bankClone = (Bank) original.clone();
 
-        if (bankClone.equals(null)) {
-            fail();}
 
-        else {
+
+
             /**
              * Geld wird auf ein originales Konto eingezahlt.
              */
@@ -38,9 +43,9 @@ public class CloneTest {
             assertNotEquals(bankClone.getKontostand(6321), 999);
 
             assertFalse(bankClone.getKontostand(1000000001) == original.getKontostand(1000000001));
-        }}
+        }
         catch (CloneNotSupportedException e) {
-              fail();}
+              throw e;  }
 
       }}
 
