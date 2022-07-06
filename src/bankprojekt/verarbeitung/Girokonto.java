@@ -5,7 +5,7 @@ package bankprojekt.verarbeitung;
  * @author Doro
  *
  */
-public class Girokonto extends Konto {
+public class  Girokonto extends Konto {
 	/**
 	 * Wert, bis zu dem das Konto überzogen werden darf
 	 */

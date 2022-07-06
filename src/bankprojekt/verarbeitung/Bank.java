@@ -297,6 +297,35 @@ public long getNeueKontonummer(){
             throw e;
         }
     }
+
+    /**
+     * Meldet Observer bei einem bestimmten Konto an
+     * @param b Observer
+     * @param konto das zu beobachtende Konto
+     */
+    public void observerAnmelden(Beobachter b, long konto){
+        konten.get(konto).addObserver(b);
+    }
+
+    /**
+     * Meldet Observer von einem Konto ab
+     * @param b der Observer
+     * @param konto das beobachtete Konto
+     */
+    public void observerAbmelden(Beobachter b, long konto){
+        konten.get(konto).removeObserver(b);
+    }
+
+    /**
+     * Benachrichtigt alle angemeldeten Beobachter
+     * zu eventuellen Änderungen im Subjekt (k)
+     * @param k
+     */
+    public static void observerBenachrichtigen(Konto k){
+        k.getBeobachter().forEach(b -> b.update(k));
+    }
+
+
 }
 
 

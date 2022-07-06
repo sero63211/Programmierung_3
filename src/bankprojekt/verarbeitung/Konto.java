@@ -2,6 +2,7 @@ package bankprojekt.verarbeitung;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -41,6 +42,20 @@ import java.util.concurrent.*;
 		 * Gesamtzahl der Aktien werden hier gespeichert.
 		 */
 		private HashMap<String,Integer> aktiendepot=new HashMap<>();
+
+		/**
+		 * Liste der Beobachter
+		 */
+		private List<Beobachter> kontobeobachter;
+
+		/**
+		 * liefert Beobachterliste
+		 * @return
+		 */
+		public List<Beobachter> getBeobachter(){
+			return kontobeobachter;
+		}
+
 
 		public Future<Double> kaufauftrag(Aktie a, int anzahl, double hoechstpreis) {
 			double gesamtkaufpreis = anzahl * a.getKurs();
@@ -115,6 +130,7 @@ import java.util.concurrent.*;
 		 */
 		protected void setKontostand(double kontostand) {
 			this.kontostand = kontostand;
+			notifyObservers();
 		}
 
 		/**
@@ -169,7 +185,7 @@ import java.util.concurrent.*;
 			if(this.gesperrt)
 				throw new GesperrtException(this.nummer);
 			this.inhaber = kinh;
-
+			notifyObservers();
 		}
 
 		/**
@@ -207,6 +223,7 @@ import java.util.concurrent.*;
 				throw new IllegalArgumentException("Falscher Betrag");
 			}
 			setKontostand(getKontostand() + betrag);
+			notifyObservers();
 		}
 
 		/**
@@ -332,12 +349,14 @@ import java.util.concurrent.*;
 			if(betrag<0) throw new IOException();
 			if(this.gesperrt)getGesperrtText(); //falls das Konto gesperrt ist
 			if(w==null){throw new IllegalArgumentException("Währung darf nicht null sein!");}
-			if(getAktuelleWaehrung()==w){ //gleiche Waehrung, wie die die vom Konto geführt wird?
-				setKontostand(betrag+getKontostand());//einzuzahlender Betrag + aktueller Kontostand
+			if(getAktuelleWaehrung()==w){
+				setKontostand(betrag+getKontostand());
+				notifyObservers();
 			}
 			else{
 				setKontostand(waehrung.waehrungInEuroUmrechnen(betrag)+this.kontostand);//einzuzahlender Betrag [konvertiert in Euro] + aktueller Kontostand
 			}
+
 		}
 		/**
 		 * gibt die aktuell geführte Währung zurück
@@ -355,7 +374,7 @@ import java.util.concurrent.*;
 		public void waehrungswechsel(Waehrung neu){
 			setKontostand(waehrung.waehrungZuWaehrung(getKontostand(),getAktuelleWaehrung(),neu));
 			setWaehrung(neu);
-
+			notifyObservers();
 
 		}
 
@@ -374,13 +393,37 @@ import java.util.concurrent.*;
 			if (abhebenBedingung(betrag)) {
 				//passt den Kontostand an
 				setKontostand(getKontostand() - betrag);
-				return true; //das muss hier
+				notifyObservers();
+				return true;
+
 			}
 			return false;
 
 		}
 
+		/**
+		 * Meldet den Beobachter an
+		 * @param ob
+		 */
+		public void addObserver(Beobachter ob){
+			kontobeobachter.add(ob);
+		}
 
+		/**
+		 *
+		 * Meldet Beobachter ab
+		 * @param b
+		 */
+		public void removeObserver(Beobachter b){
+			kontobeobachter.remove(b);
+		}
+
+		/**
+		 *
+		 */
+		protected void notifyObservers(){
+			Bank.observerBenachrichtigen(this);
+		}
 
 	}
 
