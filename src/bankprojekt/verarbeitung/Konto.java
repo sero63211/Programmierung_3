@@ -421,7 +421,7 @@ import java.util.concurrent.*;
 		/**
 		 *
 		 */
-		protected void notifyObservers(){
+		public void notifyObservers(){
 			Bank.observerBenachrichtigen(this);
 		}
 
