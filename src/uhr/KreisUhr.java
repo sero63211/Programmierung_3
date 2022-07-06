@@ -16,7 +16,7 @@ import javax.swing.JFrame;
  * @author Doro
  *
  */
-public class KreisUhr extends JFrame 
+public class KreisUhr extends JFrame implements IUhrView
 {
 	private static final long serialVersionUID = 1L;
 	private static final String TITEL = "Kreisuhr";
@@ -84,7 +84,7 @@ public class KreisUhr extends JFrame
 	/**
 	 * Holen der aktuellen Uhrzeit und Anzeige, wenn die Uhr angestellt ist
 	 */
-	private void tick() {
+	public void tick() {
 		if (!uhrAn)
 		{
 			return;
@@ -117,4 +117,24 @@ public class KreisUhr extends JFrame
 			g.drawLine(ZENTRUM_X, ZENTRUM_Y, END_X[i][zeit[i]], END_Y[i][zeit[i]]);
 		}
 	}
+
+	@Override
+	public void toggleUhr() {
+		uhrAn = !uhrAn;
+		repaint();
+	}
+
+	@Override
+	public void disableUhr() {
+		uhrAn = false;
+		repaint();
+	}
+
+	@Override
+	public void enableUhr() {
+		uhrAn = true;
+		repaint();
+	}
+
+
 }

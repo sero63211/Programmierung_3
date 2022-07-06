@@ -15,12 +15,12 @@ import javax.swing.JLabel;
  * Stellt eine Digitale Uhr dar, die man anhalten und weiterlaufen lassen kann
  *
  */ 
-public class DigitalUhr extends JFrame 
+public class DigitalUhr extends JFrame implements IUhrView
 {
 	private static final long serialVersionUID = 1L;
 	private static final String TITEL = "Digitaluhr";
-	private static final String KNOPF_EIN = "Ein";
-	private static final String KNOPF_AUS = "Aus";
+	public static final String KNOPF_EIN = "Ein";
+	public static final String KNOPF_AUS = "Aus";
 	private static final int BREITE = 500;
 	private static final int HOEHE = 300;
 
@@ -30,7 +30,6 @@ public class DigitalUhr extends JFrame
 	
 	private boolean uhrAn = true;
 	private Zeit z;
-	
 	/**
 	 * erstellt das Fenster für die digitale Uhr und bringt es auf den
 	 * Bildschirm; zu Beginn läuft die Uhr im 1-Sekunden-Takt
@@ -38,7 +37,6 @@ public class DigitalUhr extends JFrame
 	public DigitalUhr() {
 		uhrAn = true;
 		z = new Zeit();
-
 		// Erstellung der Oberflächenelemente:
 		setTitle(TITEL);
 		setSize(BREITE, HOEHE);
@@ -93,7 +91,7 @@ public class DigitalUhr extends JFrame
 	/**
 	 * Holen der aktuellen Uhrzeit und Anzeige, wenn die Uhr angestellt ist
 	 */
-	private void tick() 
+	public void tick()
 	{
 		if (uhrAn)
 		{
@@ -101,4 +99,28 @@ public class DigitalUhr extends JFrame
 					z.getSekunde()));
 		}
 	}
+
+	@Override
+	public void toggleUhr() {
+		uhrAn = !uhrAn;
+		repaint();
+	}
+
+	@Override
+	public void disableUhr() {
+		uhrAn = false;
+		repaint();
+	}
+
+	@Override
+	public void enableUhr() {
+		uhrAn = true;
+		repaint();
+	}
+
+	public void repaint() {
+		knoepfe[0].setEnabled(!uhrAn);
+		knoepfe[1].setEnabled(uhrAn);
+	}
 }
+
