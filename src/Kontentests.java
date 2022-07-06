@@ -13,7 +13,7 @@ import bankprojekt.verarbeitung.Sparbuch;
  * @author Doro
  *
  */
-public class Kontentest {
+public class Kontentests {
 
 	/**
 	 * Testprogramm für Konten
