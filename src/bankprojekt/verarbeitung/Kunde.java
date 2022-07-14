@@ -1,5 +1,8 @@
 package bankprojekt.verarbeitung;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -45,7 +48,7 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * Die Adresse
 	 */
-	private String adresse;
+	private StringProperty adresse = new SimpleStringProperty();
 	/**
 	 * Geburtstag
 	 */
@@ -72,7 +75,7 @@ public class Kunde implements Comparable<Kunde>{
 			throw new IllegalArgumentException("null als Parameter nich erlaubt");
 		this.vorname = vorname;
 		this.nachname = nachname;
-		this.adresse = adresse;
+		setAdresse(adresse);
 		this.geburtstag = gebdat;
 	}
 
@@ -118,7 +121,7 @@ public class Kunde implements Comparable<Kunde>{
 	 * @return Adresse des Kunden
 	 */
 	public String getAdresse() {
-		return adresse;
+		return adresse.get();
 	}
 
 	/**
@@ -130,7 +133,7 @@ public class Kunde implements Comparable<Kunde>{
 	public void setAdresse(String adresse) {
 		if(adresse == null)
 			throw new IllegalArgumentException("Adresse darf nicht null sein");
-		this.adresse = adresse;
+		this.adresse.set(adresse);
 	}
 
 	/**
@@ -196,4 +199,13 @@ public class Kunde implements Comparable<Kunde>{
 		else
 			ANREDE = "Dear Customer!";
 	}
+
+	/**
+	 * get adressenproperty
+	 * @return
+	 */
+	public StringProperty adresseProperty() {
+		return adresse;
+	}
+
 }

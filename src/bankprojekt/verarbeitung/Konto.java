@@ -1,5 +1,7 @@
 package bankprojekt.verarbeitung;
 
+import javafx.beans.property.*;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -34,11 +36,16 @@ import java.util.concurrent.*;
 		private final long nummer;
 
 		/**
-		 * der aktuelle Kontostand
+		 * gesperrt property
 		 */
-		private double kontostand;
+		private final BooleanProperty gesperrt = new SimpleBooleanProperty(false);
 
 		/**
+		 *  Kontostand
+		 */
+		private ReadOnlyDoubleWrapper kontostand;
+
+			/**
 		 * Gesamtzahl der Aktien werden hier gespeichert.
 		 */
 		private HashMap<String,Integer> aktiendepot=new HashMap<>();
@@ -56,6 +63,71 @@ import java.util.concurrent.*;
 			return kontobeobachter;
 		}
 
+		/**
+		 * liefert aktuellen kontostand
+		 * @return
+		 */
+		public ReadOnlyDoubleProperty kontostandProperty(){
+			return kontostand.getReadOnlyProperty();
+		}
+
+		public BooleanProperty gesperrtProperty() {
+			return gesperrt;
+		}
+		/**
+		 *
+		 * Liefert Zustand vom Konto (minus oder plus)
+		 * @return true, wenn im Plus
+		 * 			false, andernfalls
+		 */
+		public boolean getKontostandImMinus(){
+			return this.kontostandImMinus.get();
+		}
+
+		/**
+		 *
+
+		 * Ändert Zustand vom kontostandImMinus-Property
+		 * @param wert
+		 */
+		public void setKontostandImMinus(boolean wert){
+			this.kontostandImMinus.set(wert);
+		}
+		public ReadOnlyBooleanProperty kontostandImMinusProperty(){
+			return this.kontostandImMinus.getReadOnlyProperty();
+		}
+
+
+
+
+		/**
+		 *
+		 * Zeigt, ob Kontostand im Plus oder Minus ist.
+		 *
+		 */
+		private ReadOnlyBooleanWrapper kontostandImMinus;
+
+		private BooleanProperty negativerKontostand = new SimpleBooleanProperty(false);
+
+
+		/**
+		 * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
+		 * der anfängliche Kontostand wird auf 0 gesetzt.
+		 *
+		 * @param inhaber der Inhaber
+		 * @param kontonummer die gewünschte Kontonummer
+		 * @throws IllegalArgumentException wenn der Inhaber null
+		 */
+		public Konto(Kunde inhaber, long kontonummer) {
+			if(inhaber == null)
+				throw new IllegalArgumentException("Inhaber darf nicht null sein!");
+			this.inhaber = inhaber;
+			this.nummer = kontonummer;
+			this.kontostand = new ReadOnlyDoubleWrapper();
+			this.waehrung=Waehrung.EUR;
+			this.kontostandImMinus = new ReadOnlyBooleanWrapper(false);
+
+		}
 
 		public Future<Double> kaufauftrag(Aktie a, int anzahl, double hoechstpreis) {
 			double gesamtkaufpreis = anzahl * a.getKurs();
@@ -129,34 +201,15 @@ import java.util.concurrent.*;
 		 * @param kontostand neuer Kontostand
 		 */
 		protected void setKontostand(double kontostand) {
-			this.kontostand = kontostand;
+			this.kontostand.set(kontostand);
+
+			if(kontostand > 0) setKontostandImMinus(false);
+			else setKontostandImMinus(true);
 			notifyObservers();
 		}
 
-		/**
-		 * Wenn das Konto gesperrt ist (gesperrt = true), können keine Aktionen daran mehr vorgenommen werden,
-		 * die zum Schaden des Kontoinhabers wären (abheben, Inhaberwechsel)
-		 */
-		private boolean gesperrt;
 
-		/**
-		 * Setzt die beiden Eigenschaften kontoinhaber und kontonummer auf die angegebenen Werte,
-		 * der anfängliche Kontostand wird auf 0 gesetzt.
-		 *
-		 * @param inhaber der Inhaber
-		 * @param kontonummer die gewünschte Kontonummer
-		 * @throws IllegalArgumentException wenn der Inhaber null
-		 */
-		public Konto(Kunde inhaber, long kontonummer) {
-			if(inhaber == null)
-				throw new IllegalArgumentException("Inhaber darf nicht null sein!");
-			this.inhaber = inhaber;
-			this.nummer = kontonummer;
-			this.kontostand = 0;
-			this.gesperrt = false;
-			this.waehrung=Waehrung.EUR;
 
-		}
 
 		/**
 		 * setzt alle Eigenschaften des Kontos auf Standardwerte
@@ -182,7 +235,7 @@ import java.util.concurrent.*;
 		public final void setInhaber(Kunde kinh) throws GesperrtException{
 			if (kinh == null)
 				throw new IllegalArgumentException("Der Inhaber darf nicht null sein!");
-			if(this.gesperrt)
+			if(isGesperrt())
 				throw new GesperrtException(this.nummer);
 			this.inhaber = kinh;
 			notifyObservers();
@@ -193,7 +246,7 @@ import java.util.concurrent.*;
 		 * @return   double
 		 */
 		public final double getKontostand() {
-			return kontostand;
+			return kontostand.get();
 		}
 
 		/**
@@ -209,7 +262,7 @@ import java.util.concurrent.*;
 		 * @return true, wenn das Konto gesperrt ist
 		 */
 		public final boolean isGesperrt() {
-			return gesperrt;
+			return gesperrt.get();
 		}
 
 		/**
@@ -257,15 +310,15 @@ import java.util.concurrent.*;
 		 * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.
 		 */
 		public final void sperren() {
-			this.gesperrt = true;
-		}
+			this.gesperrt.set(true);
+			notifyObservers();		}
 
 		/**
 		 * entsperrt das Konto, alle Kontoaktionen sind wieder möglich.
 		 */
 		public final void entsperren() {
-			this.gesperrt = false;
-		}
+			this.gesperrt.set(false);
+			notifyObservers();		}
 
 
 		/**
@@ -274,7 +327,7 @@ import java.util.concurrent.*;
 		 */
 		public final String getGesperrtText()
 		{
-			if (this.gesperrt)
+			if (isGesperrt())
 			{
 				return "GESPERRT";
 			}
@@ -347,14 +400,14 @@ import java.util.concurrent.*;
 		 */
 		public void einzahlen(double betrag, Waehrung w) throws IOException {
 			if(betrag<0) throw new IOException();
-			if(this.gesperrt)getGesperrtText(); //falls das Konto gesperrt ist
+			if(isGesperrt())getGesperrtText(); //falls das Konto gesperrt ist
 			if(w==null){throw new IllegalArgumentException("Währung darf nicht null sein!");}
 			if(getAktuelleWaehrung()==w){
 				setKontostand(betrag+getKontostand());
 				notifyObservers();
 			}
 			else{
-				setKontostand(waehrung.waehrungInEuroUmrechnen(betrag)+this.kontostand);//einzuzahlender Betrag [konvertiert in Euro] + aktueller Kontostand
+				setKontostand(waehrung.waehrungInEuroUmrechnen(betrag)+kontostand.get());//einzuzahlender Betrag [konvertiert in Euro] + aktueller Kontostand
 			}
 
 		}

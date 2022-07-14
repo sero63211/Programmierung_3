@@ -1,5 +1,6 @@
 package bankprojekt.oberflaeche;
 
+import bankprojekt.verarbeitung.Konto;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,6 +24,10 @@ import javafx.scene.control.TextField;
  *
  */
 public class KontoOberflaeche extends BorderPane {
+	private KontoController controller;
+	private Konto model;
+
+
 	private Text ueberschrift;
 	private GridPane anzeige;
 	private Text txtNummer;
@@ -68,6 +73,8 @@ public class KontoOberflaeche extends BorderPane {
 	 */
 	public KontoOberflaeche()
 	{
+
+
 		ueberschrift = new Text("Ein Konto verändern");
 		ueberschrift.setFont(new Font("Sans Serif", 25));
 		BorderPane.setAlignment(ueberschrift, Pos.CENTER);
@@ -129,5 +136,42 @@ public class KontoOberflaeche extends BorderPane {
 		aktionen.getChildren().add(abheben);
 		
 		this.setBottom(aktionen);
+
+/**
+ * Anzeige Kontonummer
+ */
+		nummer.setText(model.getKontonummerFormatiert());
+/**
+ *		Anzeige des Kontostandes
+ */
+
+		stand.textProperty().bind(model.kontostandProperty().asString().concat(" €"));
+
+		/**
+		 * Aktion für einzahlen
+		 */
+
+
+		einzahlen.setOnAction(e -> 	controller.einzahlen(Double.parseDouble(""+betrag.getText())));
+/**
+ * Aktion für abheben
+ */
+		abheben.setOnAction(e -> controller.abheben(Double.parseDouble("" + betrag)));
+
+		/**
+		 * gesperrt-zustand Anzeige
+		 */
+		gesperrt.selectedProperty().bindBidirectional(model.gesperrtProperty());
+
+
+		/**
+		 * zeigt adresse des kontoinhabers an
+		 */
+		adresse.textProperty().bindBidirectional(model.getInhaber().adresseProperty());
+
+
+
+
+
 	}
 }
