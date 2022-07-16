@@ -1,13 +1,14 @@
-package bankprojekt.verarbeitung;
+package musterloesung;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.Locale;
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 
 /**
  * <p>
@@ -17,13 +18,12 @@ import java.util.Locale;
  * @author Dorothea Hubrich
  * @version 1.0
  */
-public class Kunde implements Comparable<Kunde>{
-
+public class Kunde implements Comparable<Kunde>, Serializable {
 	/**
 	 * Ein Musterkunde
 	 */
 	public static final Kunde MUSTERMANN = new Kunde("Max", "Mustermann", "zuhause", LocalDate.now());
-	
+
 	/**
 	 * englische oder deutsche Anrede, je nach den Systemeinstellungen
 	 */
@@ -31,7 +31,8 @@ public class Kunde implements Comparable<Kunde>{
 
 	/**
 	 * liefert die systemspezifische Anrede
-	 * @return systemspezifische Anrede
+	 * 
+	 * @return
 	 */
 	public static String getANREDE() {
 		return ANREDE;
@@ -48,7 +49,7 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * Die Adresse
 	 */
-	private StringProperty adresse = new SimpleStringProperty();
+	private StringProperty adresse;
 	/**
 	 * Geburtstag
 	 */
@@ -62,35 +63,39 @@ public class Kunde implements Comparable<Kunde>{
 	}
 
 	/**
-	 * Erzeugt einen Kunden mit den übergebenen Werten
+	 * Erzeugt einen Kunden mit den �bergebenen Werten
 	 * 
-	 * @param vorname Vorname
-	 * @param nachname Nachname
-	 * @param adresse Adresse
-	 * @param gebdat Geburtstag
-	 * @throws IllegalArgumentException wenn einer der Parameter null ist
+	 * @param vorname
+	 * @param nachname
+	 * @param adresse
+	 * @param gebdat
+	 * @throws IllegalArgumentException
+	 *             wenn einer der Parameter null ist
 	 */
 	public Kunde(String vorname, String nachname, String adresse, LocalDate gebdat) {
-		if(vorname == null || nachname == null || adresse == null || gebdat == null)
+		if (vorname == null || nachname == null || adresse == null || gebdat == null)
 			throw new IllegalArgumentException("null als Parameter nich erlaubt");
 		this.vorname = vorname;
 		this.nachname = nachname;
-		setAdresse(adresse);
+		this.adresse = new SimpleStringProperty(adresse);
 		this.geburtstag = gebdat;
 	}
 
 	/**
-	 * Erzeugt einen Kunden mit den übergebenen Werten
+	 * Erzeugt einen Kunden mit den �bergebenen Werten
 	 * 
-	 * @param vorname Vorname
-	 * @param nachname Nachname
-	 * @param adresse Adresse
-	 * @param gebdat Geburtstag im Format tt.mm.yy
-	 * @throws DateTimeParseException wenn das Format des übergebenen Datums nicht korrekt ist
-	 * @throws IllegalArgumentException wenn einer der Parameter null ist
+	 * @param vorname
+	 * @param nachname
+	 * @param adresse
+	 * @param gebdat
+	 *            im Format tt.mm.yy
+	 * @throws DateTimeParseException
+	 *             wenn das Format des �bergebenen Datums nicht korrekt ist
+	 * @throws IllegalArgumentException
+	 *             wenn einer der Parameter null ist
 	 */
-	public Kunde(String vorname, String nachname, String adresse, String gebdat)  {
-		this(vorname, nachname, adresse, LocalDate.parse(gebdat,DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
+	public Kunde(String vorname, String nachname, String adresse, String gebdat) {
+		this(vorname, nachname, adresse, LocalDate.parse(gebdat, DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)));
 	}
 
 	/**
@@ -107,18 +112,27 @@ public class Kunde implements Comparable<Kunde>{
 	}
 
 	/**
-	 * vollständiger Name des Kunden in der Form "Nachname, Vorname"
+	 * vollst�ndiger Name des Kunden in der Form "Nachname, Vorname"
 	 * 
-	 * @return vollständiger Name des Kunden
+	 * @return
 	 */
 	public String getName() {
 		return this.nachname + ", " + this.vorname;
 	}
 
 	/**
+	 * Adresse des Kunden als Property
+	 * 
+	 * @return
+	 */
+	public StringProperty adresseProperty() {
+		return adresse;
+	}
+
+	/**
 	 * Adresse des Kunden
 	 * 
-	 * @return Adresse des Kunden
+	 * @return
 	 */
 	public String getAdresse() {
 		return adresse.get();
@@ -127,11 +141,11 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * setzt die Adresse auf den angegebenen Wert
 	 * 
-	 * @param adresse neue Adresse
-	 * @throws IllegalArgumentException wenn adresse null ist
+	 * @param adresse
+	 * @throw IllegalArgumentException wenn adresse null ist
 	 */
 	public void setAdresse(String adresse) {
-		if(adresse == null)
+		if (adresse == null)
 			throw new IllegalArgumentException("Adresse darf nicht null sein");
 		this.adresse.set(adresse);
 	}
@@ -139,7 +153,7 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * Nachname des Kunden
 	 * 
-	 * @return Nachname des Kunden
+	 * @return
 	 */
 	public String getNachname() {
 		return nachname;
@@ -148,11 +162,11 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * setzt den Nachnamen auf den angegebenen Wert
 	 * 
-	 * @param nachname neuer Nachname
-	 * @throws IllegalArgumentException wenn nachname null ist
+	 * @param nachname
+	 *            * @throw IllegalArgumentException wenn nachname null ist
 	 */
 	public void setNachname(String nachname) {
-		if(nachname == null)
+		if (nachname == null)
 			throw new IllegalArgumentException("Nachname darf nicht null sein");
 		this.nachname = nachname;
 	}
@@ -160,7 +174,7 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * Vorname des Kunden
 	 * 
-	 * @return Vorname des Kunden
+	 * @return
 	 */
 	public String getVorname() {
 		return vorname;
@@ -169,11 +183,11 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * setzt den Vornamen auf den angegebenen Wert
 	 * 
-	 * @param vorname neuer Vorname
-	 * @throws IllegalArgumentException wenn vorname null ist
+	 * @param vorname
+	 * @throw IllegalArgumentException wenn vorname null ist
 	 */
 	public void setVorname(String vorname) {
-		if(vorname == null)
+		if (vorname == null)
 			throw new IllegalArgumentException("Vorname darf nicht null sein");
 		this.vorname = vorname;
 	}
@@ -181,7 +195,7 @@ public class Kunde implements Comparable<Kunde>{
 	/**
 	 * Geburtstag des Kunden
 	 * 
-	 * @return Geburtstag des Kunden
+	 * @return
 	 */
 	public LocalDate getGeburtstag() {
 		return geburtstag;
@@ -192,20 +206,10 @@ public class Kunde implements Comparable<Kunde>{
 		return this.getName().compareTo(arg0.getName());
 	}
 
-	static
-	{
-		if(Locale.getDefault().getCountry().equals("DE"))
+	static {
+		if (Locale.getDefault().getCountry().equals("DE"))
 			ANREDE = "Hallo Benutzer!";
 		else
 			ANREDE = "Dear Customer!";
 	}
-
-	/**
-	 * get adressenproperty
-	 * @return
-	 */
-	public StringProperty adresseProperty() {
-		return adresse;
-	}
-
 }
